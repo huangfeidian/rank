@@ -37,6 +37,22 @@ namespace spiritsaway::system::rank
 		};
 		rank_list(const std::string& name, const std::uint32_t rank_sz, const std::uint32_t pool_sz);
 		std::optional<std::uint32_t> rank(const std::string& player_id);
+		const std::vector<rank_info_ptr_wrapper>& sorted_rank_ptrs() const
+		{
+			return m_sorted_rank_ptrs;
+		}
+		const rank_info* get_rank_info(const std::string& player_id) const
+		{
+			auto temp_iter = m_player_to_pool_idx.find(player_id);
+			if(temp_iter == m_player_to_pool_idx.end())
+			{
+				return nullptr;
+			}
+			else
+			{
+				return &m_rank_info_pool[temp_iter->second];
+			}
+		}
 		// player_ranks 从大到小排序
 		void reset(const std::vector<rank_info>& player_ranks);
 		bool remove(const std::string& player_id);
