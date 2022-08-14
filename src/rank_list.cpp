@@ -187,5 +187,15 @@ namespace spiritsaway::system::rank
 		cur_list->reset(temp_sorted_rank_info);
 		return std::move(cur_list);
 	}
+	bool rank_list::update_player_info(const std::string& player_id, const json::object_t& player_info)
+	{
+		auto temp_iter = m_player_to_pool_idx.find(player_id);
+		if(temp_iter == m_player_to_pool_idx.end())
+		{
+			return false;
+		}
+		m_rank_info_pool[temp_iter->second].player_info = player_info;
+		return true;
+	}
 
 }

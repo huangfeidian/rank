@@ -53,6 +53,7 @@ namespace spiritsaway::system::rank
 				return &m_rank_info_pool[temp_iter->second];
 			}
 		}
+		bool update_player_info(const std::string& player_id, const json::object_t& player_info);
 		// player_ranks 从大到小排序
 		void reset(const std::vector<rank_info>& player_ranks);
 		bool remove(const std::string& player_id);
