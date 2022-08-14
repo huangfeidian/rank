@@ -18,9 +18,7 @@ namespace spiritsaway::system::rank
 	class rank_list
 	{
 		
-		const std::string m_name;
-		const std::uint32_t m_rank_sz;
-		const std::uint32_t m_pool_sz;
+
 		std::vector<rank_info> m_rank_info_pool;
 		std::vector<std::uint32_t> m_pool_unused_indexes;
 		std::unordered_map<std::string, std::uint32_t> m_player_to_pool_idx;
@@ -28,6 +26,9 @@ namespace spiritsaway::system::rank
 		std::vector<rank_info_ptr_wrapper> m_sorted_rank_ptrs;
 		
 	public:
+		const std::string m_name;
+		const std::uint32_t m_rank_sz;
+		const std::uint32_t m_pool_sz;
 		enum class update_result
 		{
 			not_in_rank = 0,
@@ -39,6 +40,10 @@ namespace spiritsaway::system::rank
 		// player_ranks 从大到小排序
 		void reset(const std::vector<rank_info>& player_ranks);
 		bool remove(const std::string& player_id);
+		std::uint32_t size() const
+		{
+			return m_sorted_rank_ptrs.size();
+		}
 		update_result update(const rank_info& one_player);
 		json encode() const;
 		static std::unique_ptr<rank_list> create(const json& data);

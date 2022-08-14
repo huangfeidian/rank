@@ -93,7 +93,7 @@ void test_3()
 	for (int i = 0; i < temp_ranks.size(); i++)
 	{
 		auto cur_player_rank = cur_rank_list.rank(temp_ranks[i].player_id);
-		if (i >= rank_num)
+		if (i >= cur_rank_list.size() || i >= cur_rank_list.m_rank_sz)
 		{
 			assert(!cur_player_rank);
 		}
@@ -113,7 +113,7 @@ void test_3()
 	for (int i = 0; i < temp_ranks.size(); i++)
 	{
 		auto cur_player_rank = cur_rank_list.rank(temp_ranks[i].player_id);
-		if (i >= rank_num)
+		if (i >= cur_rank_list.size() || i >= cur_rank_list.m_rank_sz)
 		{
 			assert(!cur_player_rank);
 		}
