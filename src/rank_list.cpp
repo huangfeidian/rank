@@ -16,7 +16,7 @@ namespace spiritsaway::system::rank
 		}
 		std::reverse(m_pool_unused_indexes.begin(), m_pool_unused_indexes.end());
 		m_player_to_pool_idx.reserve(2 * m_pool_sz);
-		m_sorted_player_keys.reserve(m_pool_sz);
+		m_sorted_rank_ptrs.reserve(m_pool_sz);
 	}
 	bool rank_list::remove(const std::string& player_id)
 	{
@@ -28,8 +28,8 @@ namespace spiritsaway::system::rank
 		const auto& one_player = m_rank_info_pool[temp_iter->second];
 
 
-		auto vec_iter = std::lower_bound(m_sorted_player_keys.begin(), m_sorted_player_keys.end(), rank_info_ptr_wrapper{ &one_player });
-		m_sorted_player_keys.erase(vec_iter);
+		auto vec_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), rank_info_ptr_wrapper{ &one_player });
+		m_sorted_rank_ptrs.erase(vec_iter);
 		m_rank_info_pool[temp_iter->second].clear();
 		m_pool_unused_indexes.push_back(temp_iter->second);
 		m_player_to_pool_idx.erase(temp_iter);
@@ -45,8 +45,8 @@ namespace spiritsaway::system::rank
 		const auto& one_player = m_rank_info_pool[temp_iter->second];
 
 
-		auto vec_iter = std::lower_bound(m_sorted_player_keys.begin(), m_sorted_player_keys.end(), rank_info_ptr_wrapper{ &one_player });
-		auto cur_rank = std::distance(m_sorted_player_keys.begin(), vec_iter);
+		auto vec_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), rank_info_ptr_wrapper{ &one_player });
+		auto cur_rank = std::distance(m_sorted_rank_ptrs.begin(), vec_iter);
 		if (cur_rank >= m_rank_sz)
 		{
 			return {};
@@ -60,7 +60,7 @@ namespace spiritsaway::system::rank
 	void rank_list::reset(const std::vector<rank_info>& player_ranks)
 	{
 		m_player_to_pool_idx.clear();
-		m_sorted_player_keys.clear();
+		m_sorted_rank_ptrs.clear();
 		for (auto& one_rank : m_rank_info_pool)
 		{
 			one_rank.clear();
@@ -80,7 +80,7 @@ namespace spiritsaway::system::rank
 			auto cur_idx = m_pool_unused_indexes.back();
 			m_pool_unused_indexes.pop_back();
 			m_rank_info_pool[cur_idx] = one_player;
-			m_sorted_player_keys.push_back(rank_info_ptr_wrapper{ &m_rank_info_pool[cur_idx] });
+			m_sorted_rank_ptrs.push_back(rank_info_ptr_wrapper{ &m_rank_info_pool[cur_idx] });
 			m_player_to_pool_idx[one_player.player_id] = cur_idx;
 			
 		}
@@ -92,19 +92,19 @@ namespace spiritsaway::system::rank
 		
 		if (temp_iter == m_player_to_pool_idx.end())
 		{
-			if (m_sorted_player_keys.size() == m_pool_sz)
+			if (m_sorted_rank_ptrs.size() == m_pool_sz)
 			{
-				if (*m_sorted_player_keys.back().ptr < one_player)
+				if (*m_sorted_rank_ptrs.back().ptr < one_player)
 				{
 					return update_result::not_in_rank;
 				}
 				else
 				{
-					auto pre_idx_iter = m_player_to_pool_idx.find(m_sorted_player_keys.back().ptr->player_id);
+					auto pre_idx_iter = m_player_to_pool_idx.find(m_sorted_rank_ptrs.back().ptr->player_id);
 					m_pool_unused_indexes.push_back(pre_idx_iter->second);
 					m_rank_info_pool[pre_idx_iter->second].clear();
 					m_player_to_pool_idx.erase(pre_idx_iter);
-					m_sorted_player_keys.pop_back();
+					m_sorted_rank_ptrs.pop_back();
 				}
 			}
 			auto cur_player_idx = m_pool_unused_indexes.back();
@@ -113,19 +113,19 @@ namespace spiritsaway::system::rank
 			m_rank_info_pool[cur_player_idx] = one_player;
 			auto cur_key = rank_info_ptr_wrapper{ &m_rank_info_pool[cur_player_idx] };
 
-			auto cur_insert_iter = std::lower_bound(m_sorted_player_keys.begin(), m_sorted_player_keys.end(), cur_key);
-			m_sorted_player_keys.insert(cur_insert_iter, cur_key);
+			auto cur_insert_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), cur_key);
+			m_sorted_rank_ptrs.insert(cur_insert_iter, cur_key);
 			return update_result::add_to_rank;
 		}
 		auto cur_key = rank_info_ptr_wrapper{ &one_player };
 		auto pre_key = rank_info_ptr_wrapper{ &m_rank_info_pool[temp_iter->second] };
 		bool is_key_increase = pre_key < cur_key;
-		auto sorted_iter = std::lower_bound(m_sorted_player_keys.begin(), m_sorted_player_keys.end(), pre_key);
+		auto sorted_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), pre_key);
 		m_rank_info_pool[temp_iter->second] = one_player;
 		if (is_key_increase)
 		{
 			auto next_iter = sorted_iter + 1;
-			while (next_iter != m_sorted_player_keys.end() && (*next_iter < pre_key))
+			while (next_iter != m_sorted_rank_ptrs.end() && (*next_iter < pre_key))
 			{
 				std::swap(*next_iter, *(next_iter - 1));
 				next_iter = next_iter + 1;
@@ -134,7 +134,7 @@ namespace spiritsaway::system::rank
 		else
 		{
 			auto pre_iter = sorted_iter;
-			while (pre_iter != m_sorted_player_keys.begin())
+			while (pre_iter != m_sorted_rank_ptrs.begin())
 			{
 				pre_iter = pre_iter - 1;
 				if (*pre_iter < pre_key)
@@ -151,8 +151,8 @@ namespace spiritsaway::system::rank
 	json rank_list::encode() const
 	{
 		std::vector< rank_info> temp_sorted_rank_info;
-		temp_sorted_rank_info.reserve(m_sorted_player_keys.size());
-		for (const auto& one_key : m_sorted_player_keys)
+		temp_sorted_rank_info.reserve(m_sorted_rank_ptrs.size());
+		for (const auto& one_key : m_sorted_rank_ptrs)
 		{
 			temp_sorted_rank_info.push_back(*one_key.ptr);
 			
