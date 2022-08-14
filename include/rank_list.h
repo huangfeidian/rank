@@ -21,9 +21,11 @@ namespace spiritsaway::system::rank
 		const std::string m_name;
 		const std::uint32_t m_rank_sz;
 		const std::uint32_t m_pool_sz;
-		std::unordered_map<std::string, std::unique_ptr<rank_info>> m_player_rank_infos;
+		std::vector<rank_info> m_rank_info_pool;
+		std::vector<std::uint32_t> m_pool_unused_indexes;
+		std::unordered_map<std::string, std::uint32_t> m_player_to_pool_idx;
 		// 从大到小排序
-		std::vector<rank_info_ptr_wrapper> m_sorted_player_keys;
+		std::vector<rank_info_ptr_wrapper> m_sorted_rank_ptrs;
 		
 	public:
 		enum class update_result

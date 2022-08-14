@@ -24,6 +24,11 @@ namespace spiritsaway::system::rank
 		{
 			return rank_key() < other.rank_key();
 		}
+		void clear()
+		{
+			player_id.clear();
+			player_info.clear();
+		}
 	};
 	struct rank_info_ptr_wrapper
 	{
