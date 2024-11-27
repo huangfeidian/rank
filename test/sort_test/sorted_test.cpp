@@ -1,4 +1,4 @@
-#include "rank_list.h"
+#include "array_rank.h"
 #include <random>
 using namespace spiritsaway::system::rank;
 
@@ -19,17 +19,17 @@ void test_1()
 	std::default_random_engine e1(r());
 	for (int i = 0; i < 10; i++)
 	{
-		auto cur_rank_list = rank_list("temp", rank_num, pool_num);
+		auto cur_array_rank = array_rank("temp", rank_num, pool_num);
 		std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 		for (const auto& one_info : temp_ranks)
 		{
-			cur_rank_list.update(one_info);
+			cur_array_rank.update(one_info);
 		}
 		for (int j = 0; j < rank_num; j++)
 		{
 			auto cur_player_id = "player_" + std::to_string(j);
-			auto cur_player_rank = cur_rank_list.rank(cur_player_id);
-			assert(cur_player_rank && cur_player_rank.value() == j);
+			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
+			assert(cur_player_rank  == (j + 1));
 		}
 	}
 }
@@ -52,17 +52,17 @@ void test_2()
 	std::default_random_engine e1(r());
 	for (int i = 0; i < 10; i++)
 	{
-		auto cur_rank_list = rank_list("temp", rank_num, pool_num);
+		auto cur_array_rank = array_rank("temp", rank_num, pool_num);
 		std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 		for (const auto& one_info : temp_ranks)
 		{
-			cur_rank_list.update(one_info);
+			cur_array_rank.update(one_info);
 		}
 		for (int j = 0; j < rank_num; j++)
 		{
 			auto cur_player_id = "player_" + std::to_string(j);
-			auto cur_player_rank = cur_rank_list.rank(cur_player_id);
-			assert(cur_player_rank && cur_player_rank.value() == j);
+			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
+			assert(cur_player_rank == (j+1));
 		}
 	}
 }
@@ -84,42 +84,42 @@ void test_3()
 		temp_ranks.push_back(cur_rank_info);
 	}
 	
-	auto cur_rank_list = rank_list("temp", rank_num, pool_num);
+	auto cur_array_rank = array_rank("temp", rank_num, pool_num);
 	for (auto one_data : temp_ranks)
 	{
-		cur_rank_list.update(one_data);
+		cur_array_rank.update(one_data);
 	}
 	std::sort(temp_ranks.begin(), temp_ranks.end());
 	for (int i = 0; i < temp_ranks.size(); i++)
 	{
-		auto cur_player_rank = cur_rank_list.rank(temp_ranks[i].player_id);
-		if (i >= cur_rank_list.size() || i >= cur_rank_list.m_rank_sz)
+		auto cur_player_rank = cur_array_rank.get_rank(temp_ranks[i].player_id);
+		if (i >= cur_array_rank.size() || i >= cur_array_rank.m_rank_sz)
 		{
 			assert(!cur_player_rank);
 		}
 		else
 		{
-			assert(cur_player_rank && cur_player_rank.value() == i);
+			assert(cur_player_rank == (i+1));
 		}
 	}
 	std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 	for (int i = 0; i < pool_num; i++)
 	{
 		auto cur_back = temp_ranks.back();
-		cur_rank_list.remove(cur_back.player_id);
+		cur_array_rank.remove(cur_back.player_id);
 		temp_ranks.pop_back();
 	}
 	std::sort(temp_ranks.begin(), temp_ranks.end());
 	for (int i = 0; i < temp_ranks.size(); i++)
 	{
-		auto cur_player_rank = cur_rank_list.rank(temp_ranks[i].player_id);
-		if (i >= cur_rank_list.size() || i >= cur_rank_list.m_rank_sz)
+		auto cur_player_rank = cur_array_rank.get_rank(temp_ranks[i].player_id);
+		if (i >= cur_array_rank.size() || i >= cur_array_rank.m_rank_sz)
 		{
 			assert(!cur_player_rank);
 		}
 		else
 		{
-			assert(cur_player_rank && cur_player_rank.value() == i);
+			assert(cur_player_rank == (i+1));
 		}
 	}
 }

@@ -1,4 +1,4 @@
-#include "rank_list.h"
+#include "array_rank.h"
 #include <random>
 
 using namespace spiritsaway::system::rank;
@@ -22,36 +22,36 @@ void test_1()
 	for (int i = 0; i < 10; i++)
 	{
 		auto temp_ranks = original_ranks;
-		auto cur_rank_list = rank_list("temp", rank_num, pool_num);
-		auto sync_rank_list = rank_list("temp", rank_num, pool_num);
+		auto cur_array_rank = array_rank("temp", rank_num, pool_num);
+		auto sync_array_rank = array_rank("temp", rank_num, pool_num);
 		std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 		for (const auto& one_info : temp_ranks)
 		{
-			auto cur_update_result = cur_rank_list.update(one_info);
-			if (cur_update_result == rank_list::update_result::not_in_rank)
+			auto cur_update_result = cur_array_rank.update(one_info);
+			if (cur_update_result == 0)
 			{
 				continue;
 			}
-			sync_rank_list.update(one_info);
+			sync_array_rank.update(one_info);
 		}
 
 		for (int j = 0; j < rank_num; j++)
 		{
 			auto cur_player_id = "player_" + std::to_string(j);
-			auto cur_player_rank = cur_rank_list.rank(cur_player_id);
-			auto sync_player_rank = sync_rank_list.rank(cur_player_id);
-			assert(cur_player_rank && cur_player_rank.value() == j && cur_player_rank == sync_player_rank);
+			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
+			auto sync_player_rank = sync_array_rank.get_rank(cur_player_id);
+			assert(cur_player_rank== (j+1) && cur_player_rank == sync_player_rank);
 		}
 		for (const auto& one_info : temp_ranks)
 		{
-			if (cur_rank_list.remove(one_info.player_id))
+			if (cur_array_rank.remove(one_info.player_id))
 			{
-				sync_rank_list.remove(one_info.player_id);
+				sync_array_rank.remove(one_info.player_id);
 				for (int j = 0; j < rank_num; j++)
 				{
 					auto cur_player_id = "player_" + std::to_string(j);
-					auto cur_player_rank = cur_rank_list.rank(cur_player_id);
-					auto sync_player_rank = sync_rank_list.rank(cur_player_id);
+					auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
+					auto sync_player_rank = sync_array_rank.get_rank(cur_player_id);
 					assert(cur_player_rank == sync_player_rank);
 				}
 			}
@@ -79,37 +79,37 @@ void test_2()
 	for (int i = 0; i < 10; i++)
 	{
 		auto temp_ranks = original_ranks;
-		auto cur_rank_list = rank_list("temp", rank_num, pool_num);
-		auto sync_rank_list = rank_list("temp", rank_num, pool_num);
+		auto cur_array_rank = array_rank("temp", rank_num, pool_num);
+		auto sync_array_rank = array_rank("temp", rank_num, pool_num);
 		std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 		for (const auto& one_info : temp_ranks)
 		{
-			auto cur_update_result = cur_rank_list.update(one_info);
-			if (cur_update_result == rank_list::update_result::not_in_rank)
+			auto cur_update_result = cur_array_rank.update(one_info);
+			if (cur_update_result == 0)
 			{
 				continue;
 			}
-			sync_rank_list.update(one_info);
+			sync_array_rank.update(one_info);
 		}
 
 		for (int j = 0; j < rank_num; j++)
 		{
 			auto cur_player_id = "player_" + std::to_string(j);
-			auto cur_player_rank = cur_rank_list.rank(cur_player_id);
-			auto sync_player_rank = sync_rank_list.rank(cur_player_id);
-			assert(cur_player_rank && cur_player_rank.value() == j && cur_player_rank == sync_player_rank);
+			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
+			auto sync_player_rank = sync_array_rank.get_rank(cur_player_id);
+			assert(cur_player_rank == (j+1) && cur_player_rank == sync_player_rank);
 		}
 		for (auto& one_info : temp_ranks)
 		{
 			one_info.rank_value += f_dis(e1);
-			if (cur_rank_list.update(one_info) != rank_list::update_result::not_in_rank)
+			if (cur_array_rank.update(one_info) != 0)
 			{
-				sync_rank_list.update(one_info);
+				sync_array_rank.update(one_info);
 				for (int j = 0; j < rank_num; j++)
 				{
 					auto cur_player_id = "player_" + std::to_string(j);
-					auto cur_player_rank = cur_rank_list.rank(cur_player_id);
-					auto sync_player_rank = sync_rank_list.rank(cur_player_id);
+					auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
+					auto sync_player_rank = sync_array_rank.get_rank(cur_player_id);
 					assert(cur_player_rank == sync_player_rank);
 				}
 			}
