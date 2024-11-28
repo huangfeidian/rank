@@ -40,7 +40,7 @@ void test_1()
 			auto cur_player_id = "player_" + std::to_string(j);
 			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
 			auto sync_player_rank = sync_array_rank.get_rank(cur_player_id);
-			assert(cur_player_rank== (j+1) && cur_player_rank == sync_player_rank);
+			assert(cur_player_rank.second== (j+1) && cur_player_rank.second == sync_player_rank.second);
 		}
 		for (const auto& one_info : temp_ranks)
 		{
@@ -97,7 +97,7 @@ void test_2()
 			auto cur_player_id = "player_" + std::to_string(j);
 			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
 			auto sync_player_rank = sync_array_rank.get_rank(cur_player_id);
-			assert(cur_player_rank == (j+1) && cur_player_rank == sync_player_rank);
+			assert(cur_player_rank.second == (j+1) && cur_player_rank.second == sync_player_rank.second);
 		}
 		for (auto& one_info : temp_ranks)
 		{

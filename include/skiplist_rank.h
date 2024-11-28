@@ -21,12 +21,14 @@ namespace spiritsaway::system::rank
 
 		public:
 			rank_info *const rank_info_ptr;
+			const bool m_is_min_max;
 			std::array<std::uint32_t, MAX_LEVEL> spans; // 记录当前(this, nexts[i])之间的0级节点数量
 			std::array<node *, MAX_LEVEL> nexts;
 
 		public:
-			node(rank_info *in_rank_info)
+			node(rank_info *in_rank_info, bool is_min_max = false)
 				: rank_info_ptr(in_rank_info)
+				, m_is_min_max(is_min_max)
 			{
 				clear();
 			}
@@ -44,6 +46,14 @@ namespace spiritsaway::system::rank
 			{
 				return *rank_info_ptr < other_value;
 			}
+
+			~node()
+			{
+				if (!m_is_min_max)
+				{
+					delete rank_info_ptr;
+				}
+			}
 		};
 
 	private:
@@ -53,16 +63,34 @@ namespace spiritsaway::system::rank
 
 		node m_max_node;
 		node m_min_node;
-		int m_level; // 最大值为max_level
-		std::uint64_t m_seq_counter;
+		int m_level; // 最大值为max_level - 2
 		std::default_random_engine m_random_engine;
 		std::uniform_int_distribution<std::uint64_t> m_random_dis;
 
 	public:
-		skiplist_rank(double in_min_value, double in_max_value);
+		skiplist_rank(const std::string& name, std::uint32_t rank_sz, std::uint32_t pool_sz, double min_value, double max_value);
 
 		~skiplist_rank();
+	public:
+		// interfaces
+		std::uint32_t update(const rank_info& one_player) override;
 
+		std::uint32_t size() const override;
+
+		bool remove(const std::string& key) override;
+
+		std::pair<const rank_info*, std::uint32_t> get_rank(const std::string& key) const override;
+
+		std::uint32_t get_rank(double value) const override;
+
+		const rank_info* get_player(std::uint32_t in_rank) const override;
+
+		
+		std::vector<const rank_info*> get_players(std::uint32_t in_begin_rank, std::uint32_t in_end_rank) const override;
+
+		json encode() const override;
+
+		bool decode(const json& data) override;
 	private:
 		int random_level();
 
@@ -78,38 +106,12 @@ namespace spiritsaway::system::rank
 
 		void remove_from_list(node *cur_node);
 
-		// 返回插入之后的排名
-		std::uint32_t update(const rank_info &one_player);
 
-		bool remove(const std::string& key);
-
-		int level() const
-		{
-			return m_level;
-		}
-
-		std::uint32_t size() const
-		{
-			return m_key_to_node.size();
-		}
-
-		// 排名从1 开始算 最左边的有效节点为第一名
-		// 0 代表不在排名里
-		std::uint32_t get_rank_for_key(const std::string &key) const;
-
-		// 有多个相同value时 返回最后一个value的排名
-		std::uint32_t get_rank_for_value(double value) const;
-
-		const rank_info *get_key_for_rank(std::uint32_t in_rank) const;
-
-		// 获取[in_begin_rank, in_end_rank]之间的节点
-		std::vector<const rank_info *> get_keys_in_rank_range(std::uint32_t in_begin_rank, std::uint32_t in_end_rank) const;
-
-		json encode() const;
-
-		bool decode(const json &data);
+		int level() const;
+		void shrink_to_pool_sz();
 
 	private:
-		const node *get_node_for_rank(std::uint32_t in_rank) const;
+		node *get_node_for_rank(std::uint32_t in_rank) const;
+
 	};
 }

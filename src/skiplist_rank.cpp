@@ -2,12 +2,16 @@
 
 namespace spiritsaway::system::rank
 {
-	skiplist_rank::skiplist_rank(double in_min_value, double in_max_value)
-		: rank_interface(), m_max_node(&m_max_rank_info), m_min_node(&m_min_rank_info), m_level(0), m_seq_counter(0), m_random_engine(std::random_device{}()), m_random_dis(0, (1ull << (2 * MAX_LEVEL)) - 1)
+	skiplist_rank::skiplist_rank(const std::string& name, std::uint32_t rank_sz, std::uint32_t pool_sz, double min_value, double max_value)
+		: rank_interface(name, rank_sz, pool_sz, min_value, max_value)
+		, m_max_node(&m_max_rank_info, true)
+		, m_min_node(&m_min_rank_info, true)
+		, m_level(0)
+		, m_random_engine(std::random_device{}()), m_random_dis(0, (1ull << (2 * MAX_LEVEL)) - 1)
 	{
-		m_max_rank_info.rank_value = in_max_value;
+		m_max_rank_info.rank_value = max_value;
 		m_max_rank_info.update_ts = 0;
-		m_min_rank_info.rank_value = in_min_value;
+		m_min_rank_info.rank_value = min_value;
 		m_min_rank_info.update_ts = std::numeric_limits<std::uint64_t>::max();
 
 		for (int i = 0; i < MAX_LEVEL; i++)
@@ -47,7 +51,7 @@ namespace spiritsaway::system::rank
 	{
 		auto temp_node = std::make_unique<node>(new rank_info(one_player));
 		auto result = temp_node.get();
-		result->rank_info_ptr->update_ts = ++m_seq_counter;
+		result->rank_info_ptr->update_ts = gen_next_update_ts();
 		m_key_to_node[one_player.player_id] = std::move(temp_node);
 		return result;
 	}
@@ -130,6 +134,7 @@ namespace spiritsaway::system::rank
 	// 返回插入之后的排名
 	std::uint32_t skiplist_rank::update(const rank_info &one_player)
 	{
+		bool should_shrink = false;
 		auto temp_node = find_node(one_player.player_id);
 		if (temp_node == nullptr)
 		{
@@ -139,19 +144,28 @@ namespace spiritsaway::system::rank
 				return 0;
 			}
 			temp_node = create_node(one_player);
+			if (size() > m_pool_sz + std::max<int>(m_pool_sz / 100, 100))
+			{
+				should_shrink = true;
+			}
 		}
 		else
 		{
-			if (temp_node->rank_info_ptr->rank_value != one_player.rank_value)
+			if (temp_node->rank_info_ptr->rank_value == one_player.rank_value)
+			{
+				// 相同分数 直接返回排名
+				return get_rank(one_player.player_id).second;
+			}
+			else
 			{
 				remove_from_list(temp_node);
 				if (one_player.rank_value <= m_min_rank_info.rank_value || one_player.rank_value >= m_max_rank_info.rank_value)
 				{
 					// 代表从当前排行榜上删除这个玩家
-					delete temp_node;
+					m_key_to_node.erase(one_player.player_id);
 					return 0;
 				}
-				temp_node->rank_info_ptr->update_value_and_ts(one_player.rank_value, ++m_seq_counter);
+				temp_node->rank_info_ptr->update_value_and_ts(one_player.rank_value, gen_next_update_ts());
 			}
 		}
 
@@ -212,24 +226,22 @@ namespace spiritsaway::system::rank
 		return m_key_to_node.size();
 	}
 
-	// 排名从1 开始算 最左边的有效节点为第一名
-	// 0 代表不在排名里
-	std::uint32_t skiplist_rank::get_rank_for_key(const std::string &key) const
+	std::pair<const rank_info*, std::uint32_t> skiplist_rank::get_rank(const std::string &key) const
 	{
 		auto temp_node = find_node(key);
 		if (temp_node == nullptr)
 		{
-			return 0;
+			return std::make_pair<const rank_info*, std::uint32_t>(nullptr, 0);
 		}
 
 		std::array<const node *, MAX_LEVEL> prev_nodes;
 		std::array<std::uint32_t, MAX_LEVEL> prev_ranks;
 		get_prev_nodes_const(*temp_node, prev_nodes, prev_ranks);
-		return prev_ranks[0] + 1;
+		return std::make_pair(temp_node->rank_info_ptr, prev_ranks[0] + 1);
 	}
 
 	// 有多个相同value时 返回最后一个value的排名
-	std::uint32_t skiplist_rank::get_rank_for_value(double value) const
+	std::uint32_t skiplist_rank::get_rank(double value) const
 	{
 		rank_info temp_rank_info;
 		temp_rank_info.rank_value = value;
@@ -242,7 +254,7 @@ namespace spiritsaway::system::rank
 		return prev_ranks[0] + 1;
 	}
 
-	const rank_info *skiplist_rank::get_key_for_rank(std::uint32_t in_rank) const
+	const rank_info *skiplist_rank::get_player(std::uint32_t in_rank) const
 	{
 		auto result_node = get_node_for_rank(in_rank);
 		if (result_node)
@@ -255,7 +267,7 @@ namespace spiritsaway::system::rank
 		}
 	}
 	// 获取[in_begin_rank, in_end_rank]之间的节点
-	std::vector<const rank_info *> skiplist_rank::get_keys_in_rank_range(std::uint32_t in_begin_rank, std::uint32_t in_end_rank) const
+	std::vector<const rank_info *> skiplist_rank::get_players(std::uint32_t in_begin_rank, std::uint32_t in_end_rank) const
 	{
 
 		if (in_end_rank > size())
@@ -299,18 +311,15 @@ namespace spiritsaway::system::rank
 		{
 			all_nodes_json.push_back(*begin_node->rank_info_ptr);
 		}
-		result["nodes"] = std::move(all_nodes_json);
+		result["sorted_ranks"] = std::move(all_nodes_json);
+		return result;
 	}
 	bool skiplist_rank::decode(const json &data)
 	{
-		double min_value, max_value;
 		std::vector<rank_info> temp_rank_infos;
 		try
 		{
-			data.at("min_value").get_to(min_value);
-			data.at("max_value").get_to(max_value);
-
-			data.at("nodes").get_to(temp_rank_infos);
+			data.at("sorted_ranks").get_to(temp_rank_infos);
 		}
 		catch (std::exception &e)
 		{
@@ -327,7 +336,7 @@ namespace spiritsaway::system::rank
 		}
 		return true;
 	}
-	const skiplist_rank::node *skiplist_rank::get_node_for_rank(std::uint32_t in_rank) const
+	skiplist_rank::node *skiplist_rank::get_node_for_rank(std::uint32_t in_rank) const
 	{
 		if (in_rank == 0 || in_rank > size())
 		{
@@ -364,5 +373,37 @@ namespace spiritsaway::system::rank
 			}
 		}
 		return nullptr;
+	}
+
+	void skiplist_rank::shrink_to_pool_sz()
+	{
+		auto dest_rank = m_pool_sz;
+		auto remove_begin_node = get_node_for_rank(dest_rank);
+		if (!remove_begin_node)
+		{
+			return;
+		}
+		std::array<node*, MAX_LEVEL> prev_nodes;
+		std::array<std::uint32_t, MAX_LEVEL> prev_ranks;
+		get_prev_nodes(*remove_begin_node, prev_nodes, prev_ranks);
+		
+		while (remove_begin_node != &m_min_node)
+		{
+			auto temp_node = remove_begin_node->nexts[0];
+			for (int i = 0; i <= m_level; i++)
+			{
+				if (prev_nodes[i]->nexts[i] == remove_begin_node)
+				{
+					prev_nodes[i]->spans[i] += remove_begin_node->spans[i];
+					prev_nodes[i]->nexts[i] = remove_begin_node->nexts[i];
+				}
+				else
+				{
+					prev_nodes[i]->spans[i] -= 1;
+				}
+			}
+			m_key_to_node.erase(temp_node->rank_info_ptr->player_id);
+			remove_begin_node = temp_node;
+		}
 	}
 }

@@ -19,7 +19,7 @@ void test_1()
 	std::default_random_engine e1(r());
 	for (int i = 0; i < 10; i++)
 	{
-		auto cur_array_rank = array_rank("temp", rank_num, pool_num);
+		auto cur_array_rank = array_rank("temp", rank_num, pool_num, -100000, 100000);
 		std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 		for (const auto& one_info : temp_ranks)
 		{
@@ -29,7 +29,7 @@ void test_1()
 		{
 			auto cur_player_id = "player_" + std::to_string(j);
 			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
-			assert(cur_player_rank  == (j + 1));
+			assert(cur_player_rank.second  == (j + 1));
 		}
 	}
 }
@@ -52,7 +52,7 @@ void test_2()
 	std::default_random_engine e1(r());
 	for (int i = 0; i < 10; i++)
 	{
-		auto cur_array_rank = array_rank("temp", rank_num, pool_num);
+		auto cur_array_rank = array_rank("temp", rank_num, pool_num, -100000, 100000);
 		std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
 		for (const auto& one_info : temp_ranks)
 		{
@@ -62,7 +62,7 @@ void test_2()
 		{
 			auto cur_player_id = "player_" + std::to_string(j);
 			auto cur_player_rank = cur_array_rank.get_rank(cur_player_id);
-			assert(cur_player_rank == (j+1));
+			assert(cur_player_rank.second == (j+1));
 		}
 	}
 }
@@ -84,7 +84,7 @@ void test_3()
 		temp_ranks.push_back(cur_rank_info);
 	}
 	
-	auto cur_array_rank = array_rank("temp", rank_num, pool_num);
+	auto cur_array_rank = array_rank("temp", rank_num, pool_num, -100000, 100000);
 	for (auto one_data : temp_ranks)
 	{
 		cur_array_rank.update(one_data);
@@ -95,11 +95,11 @@ void test_3()
 		auto cur_player_rank = cur_array_rank.get_rank(temp_ranks[i].player_id);
 		if (i >= cur_array_rank.size() || i >= cur_array_rank.m_rank_sz)
 		{
-			assert(!cur_player_rank);
+			assert(!cur_player_rank.second);
 		}
 		else
 		{
-			assert(cur_player_rank == (i+1));
+			assert(cur_player_rank.second == (i+1));
 		}
 	}
 	std::shuffle(temp_ranks.begin(), temp_ranks.end(), e1);
@@ -115,11 +115,11 @@ void test_3()
 		auto cur_player_rank = cur_array_rank.get_rank(temp_ranks[i].player_id);
 		if (i >= cur_array_rank.size() || i >= cur_array_rank.m_rank_sz)
 		{
-			assert(!cur_player_rank);
+			assert(!cur_player_rank.second);
 		}
 		else
 		{
-			assert(cur_player_rank == (i+1));
+			assert(cur_player_rank.second == (i+1));
 		}
 	}
 }
