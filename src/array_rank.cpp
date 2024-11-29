@@ -44,14 +44,7 @@ namespace spiritsaway::system::rank
 
 			auto vec_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), rank_info_ptr_wrapper{ &one_player });
 			auto cur_rank = std::distance(m_sorted_rank_ptrs.begin(), vec_iter);
-			if (cur_rank >= m_rank_sz)
-			{
-				return std::make_pair(&m_rank_info_pool[temp_iter->second], 0);
-			}
-			else
-			{
-				return std::make_pair(&m_rank_info_pool[temp_iter->second], cur_rank + 1);
-			}
+			return std::make_pair(&m_rank_info_pool[temp_iter->second], cur_rank + 1);
 		}
 	}
 	std::uint32_t array_rank::get_rank(double rank_value) const
@@ -61,14 +54,7 @@ namespace spiritsaway::system::rank
 		temp_rank_info.update_ts = std::numeric_limits<std::uint64_t>::max();
 		auto vec_iter = std::upper_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), rank_info_ptr_wrapper{&temp_rank_info});
 		auto cur_rank = std::distance(m_sorted_rank_ptrs.begin(), vec_iter);
-		if (cur_rank >= m_rank_sz)
-		{
-			return 0;
-		}
-		else
-		{
-			return cur_rank + 1;
-		}
+		return cur_rank + 1;
 	}
 	void array_rank::reset(const std::vector<rank_info> &player_ranks)
 	{
@@ -111,7 +97,7 @@ namespace spiritsaway::system::rank
 			}
 			if (m_sorted_rank_ptrs.size() == m_pool_sz)
 			{
-				if (*m_sorted_rank_ptrs.back().ptr < one_player)
+				if (*m_sorted_rank_ptrs.back().ptr < one_player.rank_value)
 				{
 					return 0;
 				}
@@ -226,7 +212,7 @@ namespace spiritsaway::system::rank
 
 	const rank_info* array_rank::get_player(std::uint32_t in_rank) const
 	{
-		if (in_rank == 0 || in_rank > m_rank_sz || in_rank > m_sorted_rank_ptrs.size())
+		if (in_rank == 0 || in_rank > m_sorted_rank_ptrs.size())
 		{
 			return nullptr;
 		}
@@ -239,16 +225,16 @@ namespace spiritsaway::system::rank
 		{
 			return {};
 		}
-		if (begin_rank == 0 || begin_rank > m_rank_sz || begin_rank > m_sorted_rank_ptrs.size())
+		if (begin_rank == 0 ||  begin_rank > m_sorted_rank_ptrs.size())
 		{
 			return {};
 		}
 
-		end_rank = std::min(std::min(end_rank, m_rank_sz), std::uint32_t(m_sorted_rank_ptrs.size()));
+		end_rank = std::min(end_rank, std::uint32_t(m_sorted_rank_ptrs.size()));
 		std::vector<const rank_info*> result(end_rank - begin_rank + 1);
 		for (std::uint32_t i = begin_rank; i <= end_rank; i++)
 		{
-			result[i] = m_sorted_rank_ptrs[i - 1].ptr;
+			result[i-begin_rank] = m_sorted_rank_ptrs[i - begin_rank].ptr;
 		}
 		return result;
 	}

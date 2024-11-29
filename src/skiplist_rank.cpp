@@ -4,8 +4,8 @@ namespace spiritsaway::system::rank
 {
 	skiplist_rank::skiplist_rank(const std::string& name, std::uint32_t rank_sz, std::uint32_t pool_sz, double min_value, double max_value)
 		: rank_interface(name, rank_sz, pool_sz, min_value, max_value)
-		, m_max_node(&m_max_rank_info, true)
-		, m_min_node(&m_min_rank_info, true)
+		, m_max_node(&m_max_rank_info, false)
+		, m_min_node(&m_min_rank_info, false)
 		, m_level(0)
 		, m_random_engine(std::random_device{}()), m_random_dis(0, (1ull << (2 * MAX_LEVEL)) - 1)
 	{
@@ -78,7 +78,7 @@ namespace spiritsaway::system::rank
 		for (int i = m_level; i >= 0; --i)
 		{
 
-			// 由于我们保证了最末尾有一个m_max_node
+			// 由于我们保证了最末尾有一个m_min_node
 			// 所以search_node->next[i]永远存在
 			while (*search_node->nexts[i] < in_node)
 			{
@@ -99,7 +99,7 @@ namespace spiritsaway::system::rank
 		for (int i = m_level; i >= 0; --i)
 		{
 
-			// 由于我们保证了最末尾有一个m_max_node
+			// 由于我们保证了最末尾有一个m_min_node
 			// 所以search_node->next[i]永远存在
 			while (*search_node->nexts[i] < in_node)
 			{
@@ -134,7 +134,8 @@ namespace spiritsaway::system::rank
 	// 返回插入之后的排名
 	std::uint32_t skiplist_rank::update(const rank_info &one_player)
 	{
-		bool should_shrink = false;
+		// debug_print();
+		auto pre_size = size();
 		auto temp_node = find_node(one_player.player_id);
 		if (temp_node == nullptr)
 		{
@@ -144,10 +145,6 @@ namespace spiritsaway::system::rank
 				return 0;
 			}
 			temp_node = create_node(one_player);
-			if (size() > m_pool_sz + std::max<int>(m_pool_sz / 100, 100))
-			{
-				should_shrink = true;
-			}
 		}
 		else
 		{
@@ -159,6 +156,7 @@ namespace spiritsaway::system::rank
 			else
 			{
 				remove_from_list(temp_node);
+				pre_size -= 1;
 				if (one_player.rank_value <= m_min_rank_info.rank_value || one_player.rank_value >= m_max_rank_info.rank_value)
 				{
 					// 代表从当前排行榜上删除这个玩家
@@ -172,14 +170,19 @@ namespace spiritsaway::system::rank
 		std::array<node *, MAX_LEVEL> prev_nodes;
 		std::array<std::uint32_t, MAX_LEVEL> prev_ranks;
 		get_prev_nodes(*temp_node, prev_nodes, prev_ranks);
-
+		if (prev_ranks[0] == m_pool_sz)
+		{
+			m_key_to_node.erase(one_player.player_id);
+			return m_pool_sz + 1;
+		}
 		int cur_node_level = random_level();
 
 		if (cur_node_level > m_level)
 		{
 			// 超过当前最大层数的时候直接对当前层数加1
 			cur_node_level = ++m_level;
-			prev_nodes[cur_node_level] = &m_min_node;
+			prev_nodes[cur_node_level] = &m_max_node;
+			m_max_node.spans[cur_node_level] = pre_size;
 		}
 
 		// 调整next指针与span
@@ -192,11 +195,21 @@ namespace spiritsaway::system::rank
 			// A - B -1 就是当前节点到next[i]之间的span数量
 			// A - B - 1 = prev_ranks[i] + prev_nodes[i]->spans[i] - prev_ranks[0];
 			temp_node->spans[i] = prev_ranks[i] + prev_nodes[i]->spans[i] - prev_ranks[0];
+			assert(temp_node->spans[i] < size() + 100);
 			// C = prev_ranks[i] 就是当前prev[i] 的全局排名
 			// B - C - 1就是prev[i] 的新span[i]
 			// B - C - 1 = prev_ranks[0] - prev_ranks[i]
 			prev_nodes[i]->spans[i] = prev_ranks[0] - prev_ranks[i];
+			assert(prev_nodes[i]->spans[i] < size() + 100);
 			prev_nodes[i]->nexts[i] = temp_node;
+		}
+		for (int i = cur_node_level + 1; i <= m_level; i++)
+		{
+			prev_nodes[i]->spans[i] += 1;
+		}
+		if (size() > m_pool_sz)
+		{
+			shrink_to_pool_sz();
 		}
 		return prev_ranks[0] + 1;
 	}
@@ -247,7 +260,7 @@ namespace spiritsaway::system::rank
 		temp_rank_info.rank_value = value;
 		temp_rank_info.update_ts = std::numeric_limits<std::uint64_t>::max();
 
-		node temp_node(&temp_rank_info);
+		node temp_node(&temp_rank_info, false);
 		std::array<const node *, MAX_LEVEL> prev_nodes;
 		std::array<std::uint32_t, MAX_LEVEL> prev_ranks;
 		get_prev_nodes_const(temp_node, prev_nodes, prev_ranks);
@@ -269,7 +282,6 @@ namespace spiritsaway::system::rank
 	// 获取[in_begin_rank, in_end_rank]之间的节点
 	std::vector<const rank_info *> skiplist_rank::get_players(std::uint32_t in_begin_rank, std::uint32_t in_end_rank) const
 	{
-
 		if (in_end_rank > size())
 		{
 			in_end_rank = size();
@@ -342,20 +354,15 @@ namespace spiritsaway::system::rank
 		{
 			return nullptr;
 		}
-		const node *search_node = &m_min_node;
+		const node *search_node = &m_max_node;
 		std::uint32_t last_level_prev_rank = 0;
 		for (int i = m_level; i >= 0; --i)
 		{
 
-			// 由于我们保证了最末尾有一个m_max_node
+			// 由于我们保证了最末尾有一个m_min_node
 			// 所以search_node->next[i]永远存在
 			while (last_level_prev_rank < in_rank)
 			{
-				if (search_node->nexts[i] == &m_max_node)
-				{
-					assert(false);
-					return nullptr;
-				}
 				auto temp_next_rank = last_level_prev_rank + search_node->spans[i] + 1;
 				if (temp_next_rank == in_rank)
 				{
@@ -377,7 +384,7 @@ namespace spiritsaway::system::rank
 
 	void skiplist_rank::shrink_to_pool_sz()
 	{
-		auto dest_rank = m_pool_sz;
+		auto dest_rank = m_pool_sz + 1;
 		auto remove_begin_node = get_node_for_rank(dest_rank);
 		if (!remove_begin_node)
 		{
@@ -402,8 +409,38 @@ namespace spiritsaway::system::rank
 					prev_nodes[i]->spans[i] -= 1;
 				}
 			}
-			m_key_to_node.erase(temp_node->rank_info_ptr->player_id);
+			m_key_to_node.erase(remove_begin_node->rank_info_ptr->player_id);
 			remove_begin_node = temp_node;
 		}
+	}
+
+	bool skiplist_rank::update_player_info(const std::string& player_id, const json::object_t& player_info)
+	{
+		auto result_node = find_node(player_id);
+		if (result_node)
+		{
+			result_node->rank_info_ptr->player_info = player_info;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	void skiplist_rank::debug_print() const
+	{
+		std::cout << "<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+		for (int i = m_level; i > 0; i--)
+		{
+			auto temp_next = &m_max_node;
+			while (temp_next != &m_min_node)
+			{
+				std::cout << "(" << temp_next->rank_info_ptr->rank_value << "," << temp_next->spans[i] << ") ";
+				temp_next = temp_next->nexts[i];
+			}
+			std::cout << std::endl;
+		}
+		std::cout << ">>>>>>>>>>>>>>>>>>>" << std::endl;
 	}
 }

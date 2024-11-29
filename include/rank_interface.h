@@ -58,8 +58,8 @@ namespace spiritsaway::system::rank
 		const std::string m_name;
 		const std::uint32_t m_rank_sz;
 		const std::uint32_t m_pool_sz;
-		const bool m_min_value;
-		const bool m_max_value;
+		const double m_min_value;
+		const double m_max_value;
 	private:
 		std::uint64_t m_update_ts;
 	};

@@ -26,7 +26,7 @@ namespace spiritsaway::system::rank
 		}
 		bool operator<(double other) const
 		{
-			return rank_value <= other;
+			return rank_value >= other;
 		}
 		void clear()
 		{

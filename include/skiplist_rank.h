@@ -21,14 +21,14 @@ namespace spiritsaway::system::rank
 
 		public:
 			rank_info *const rank_info_ptr;
-			const bool m_is_min_max;
+			const bool m_should_delete;
 			std::array<std::uint32_t, MAX_LEVEL> spans; // 记录当前(this, nexts[i])之间的0级节点数量
 			std::array<node *, MAX_LEVEL> nexts;
 
 		public:
-			node(rank_info *in_rank_info, bool is_min_max = false)
+			node(rank_info *in_rank_info, bool should_delete = true)
 				: rank_info_ptr(in_rank_info)
-				, m_is_min_max(is_min_max)
+				, m_should_delete(should_delete)
 			{
 				clear();
 			}
@@ -49,7 +49,7 @@ namespace spiritsaway::system::rank
 
 			~node()
 			{
-				if (!m_is_min_max)
+				if (m_should_delete)
 				{
 					delete rank_info_ptr;
 				}
@@ -71,6 +71,7 @@ namespace spiritsaway::system::rank
 		skiplist_rank(const std::string& name, std::uint32_t rank_sz, std::uint32_t pool_sz, double min_value, double max_value);
 
 		~skiplist_rank();
+		void debug_print() const;
 	public:
 		// interfaces
 		std::uint32_t update(const rank_info& one_player) override;
@@ -91,6 +92,7 @@ namespace spiritsaway::system::rank
 		json encode() const override;
 
 		bool decode(const json& data) override;
+		bool update_player_info(const std::string& player_id, const json::object_t& player_info) override;
 	private:
 		int random_level();
 
@@ -109,6 +111,7 @@ namespace spiritsaway::system::rank
 
 		int level() const;
 		void shrink_to_pool_sz();
+		
 
 	private:
 		node *get_node_for_rank(std::uint32_t in_rank) const;
