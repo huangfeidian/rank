@@ -53,5 +53,7 @@ namespace spiritsaway::system::rank
 		{
 			return "array_rank";
 		}
+
+		static std::unique_ptr<array_rank> create(const json& data);
 	};
 }

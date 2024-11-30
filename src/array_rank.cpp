@@ -216,4 +216,30 @@ namespace spiritsaway::system::rank
 		}
 		return result;
 	}
+
+	std::unique_ptr<array_rank> array_rank::create(const json& data)
+	{
+		std::uint32_t rank_sz;
+		std::uint32_t pool_sz;
+		std::string name;
+		double min_value, max_value;
+		std::vector<rank_info> temp_sorted_rank_info;
+		try
+		{
+			data.at("name").get_to(name);
+			data.at("pool_sz").get_to(pool_sz);
+			data.at("rank_sz").get_to(rank_sz);
+			data.at("sorted_ranks").get_to(temp_sorted_rank_info);
+			data.at("min_value").get_to(min_value);
+			data.at("max_value").get_to(max_value);
+		}
+		catch (std::exception& e)
+		{
+			assert(false);
+			return {};
+		}
+		auto cur_array_rank = std::make_unique<array_rank>(name, rank_sz, pool_sz, min_value, max_value);
+		cur_array_rank->reset(temp_sorted_rank_info);
+		return std::move(cur_array_rank);
+	}
 }
