@@ -14,7 +14,7 @@ namespace spiritsaway::system::rank
 
 	class skiplist_rank : public rank_interface
 	{
-		static const std::uint32_t MAX_LEVEL = 20;
+		static const std::uint32_t MAX_LEVEL = 24;
 
 		struct node
 		{
@@ -37,8 +37,8 @@ namespace spiritsaway::system::rank
 
 			void clear()
 			{
-				std::fill(nexts.begin(), nexts.end(), nullptr);
-				std::fill(spans.begin(), spans.end(), 0);
+				//std::fill(nexts.begin(), nexts.end(), nullptr);
+				//std::fill(spans.begin(), spans.end(), 0);
 			}
 			bool operator<(const node &other) const
 			{

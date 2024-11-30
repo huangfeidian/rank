@@ -82,8 +82,8 @@ namespace spiritsaway::system::rank
 	// 记录每一层中当前node 的prev节点
 	void skiplist_rank::get_prev_nodes(const node &in_node, std::array<node *, MAX_LEVEL> &prev_nodes, std::array<std::uint32_t, MAX_LEVEL> &prev_ranks)
 	{
-		std::fill(prev_nodes.begin(), prev_nodes.begin() + m_level + 1, nullptr);
-		std::fill(prev_ranks.begin(), prev_ranks.begin() + m_level + 1, 0);
+		//std::fill(prev_nodes.begin(), prev_nodes.begin() + m_level + 1, nullptr);
+		//std::fill(prev_ranks.begin(), prev_ranks.begin() + m_level + 1, 0);
 		node *search_node = &m_max_node;
 		std::uint32_t last_level_prev_rank = 0;
 		for (int i = m_level; i >= 0; --i)
@@ -103,8 +103,8 @@ namespace spiritsaway::system::rank
 	// 记录每一层中当前node 的prev节点
 	void skiplist_rank::get_prev_nodes_const(const node &in_node, std::array<const node *, MAX_LEVEL> &prev_nodes, std::array<std::uint32_t, MAX_LEVEL> &prev_ranks) const
 	{
-		std::fill(prev_nodes.begin(), prev_nodes.end(), nullptr);
-		std::fill(prev_ranks.begin(), prev_ranks.end(), 0);
+		//std::fill(prev_nodes.begin(), prev_nodes.begin() + m_level + 1, nullptr);
+		//std::fill(prev_ranks.begin(), prev_ranks.begin() + m_level + 1, 0);
 		const node *search_node = &m_max_node;
 		std::uint32_t last_level_prev_rank = 0;
 		for (int i = m_level; i >= 0; --i)
