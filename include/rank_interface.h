@@ -4,6 +4,12 @@
 #include <optional>
 namespace spiritsaway::system::rank
 {
+	struct update_rank_result
+	{
+		std::uint32_t pre_rank = 0;
+		std::uint32_t new_rank = 0;
+		std::uint64_t update_ts = 0;
+	};
 	class rank_interface
 	{
 	public:
@@ -40,7 +46,7 @@ namespace spiritsaway::system::rank
 
 		virtual std::uint32_t size() const = 0;
 		// rank 为1 代表第一名  为0 代表不在排行榜上
-		virtual std::uint32_t update(const rank_info& one_player) = 0;
+		virtual update_rank_result update(const rank_info& one_player) = 0;
 
 		// 获取玩家对应的信息与排名
 		virtual std::pair<const rank_info*, std::uint32_t> get_rank(const std::string& player_id) const = 0;

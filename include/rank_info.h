@@ -14,7 +14,7 @@ namespace spiritsaway::system::rank
 		double rank_value = 0.0;
 		std::uint64_t update_ts = 0;
 		json::object_t player_info;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE(rank_info, player_id, rank_value, player_info)
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE(rank_info, player_id, rank_value, player_info, update_ts)
 
 		std::tuple<double, std::uint64_t, std::string_view> rank_key() const
 		{

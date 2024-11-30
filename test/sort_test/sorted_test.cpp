@@ -204,9 +204,9 @@ void test_4()
 		one_data.rank_value += delta_dis(e1);
 		auto temp_rank_1 = cur_array_rank.update(one_data);
 		auto temp_rank_2 = cur_list_rank.update(one_data);
-		if (temp_rank_1 > 0 && temp_rank_1 <= cur_array_rank.m_rank_sz)
+		if (temp_rank_1.new_rank > 0 && temp_rank_1.new_rank <= cur_array_rank.m_rank_sz)
 		{
-			assert(temp_rank_1 == temp_rank_2);
+			assert(temp_rank_1.new_rank == temp_rank_2.new_rank);
 		}
 	}
 	for (int i = 0; i < pool_num; i++)

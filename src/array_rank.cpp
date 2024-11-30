@@ -63,7 +63,7 @@ namespace spiritsaway::system::rank
 		}
 	}
 
-	std::uint32_t array_rank::update(const rank_info &one_player)
+	update_rank_result array_rank::update(const rank_info &one_player)
 	{
 		
 		auto temp_iter = m_player_rank_infos.find(one_player.player_id);
@@ -72,13 +72,13 @@ namespace spiritsaway::system::rank
 		{
 			if (one_player.rank_value <= m_min_value || one_player.rank_value >= m_max_value)
 			{
-				return 0;
+				return update_rank_result{ 0, 0 ,0};
 			}
 			if (m_sorted_rank_ptrs.size() == m_pool_sz)
 			{
 				if (*m_sorted_rank_ptrs.back().ptr < one_player.rank_value)
 				{
-					return 0;
+					return update_rank_result{ 0, 0 ,0};
 				}
 				else
 				{
@@ -94,22 +94,24 @@ namespace spiritsaway::system::rank
 			m_player_rank_infos[one_player.player_id] = std::move(temp_rank_info_ptr);
 			auto cur_insert_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), cur_key);
 			auto result_iter = m_sorted_rank_ptrs.insert(cur_insert_iter, cur_key);
-			return std::distance(m_sorted_rank_ptrs.begin(), result_iter) + 1;
+			return update_rank_result{ 0, std::uint32_t(std::distance(m_sorted_rank_ptrs.begin(), result_iter) + 1) };
 		}
+		auto pre_key = rank_info_ptr_wrapper{ temp_iter->second.get() };
+		auto self_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), pre_key);
+		std::uint32_t pre_rank = std::distance(m_sorted_rank_ptrs.begin(), self_iter) + 1;
 		if (one_player.rank_value <= m_min_value || one_player.rank_value >= m_max_value)
 		{
 			remove(one_player.player_id);
-			return 0;
+			return update_rank_result{ pre_rank, 0 , 0};
 		}
 		
-		auto cur_key = rank_info_ptr_wrapper{&one_player};
-		auto pre_key = rank_info_ptr_wrapper{temp_iter->second.get()};
-		bool is_key_increase = pre_key < cur_key;
-		auto self_iter = std::lower_bound(m_sorted_rank_ptrs.begin(), m_sorted_rank_ptrs.end(), pre_key);
 		if (temp_iter->second->rank_value == one_player.rank_value)
 		{
-			return std::distance(m_sorted_rank_ptrs.begin(), self_iter) + 1;
+			return update_rank_result{ pre_rank, pre_rank , temp_iter->second->update_ts};
 		}
+		auto cur_key = rank_info_ptr_wrapper{ &one_player };
+
+		bool is_key_increase = pre_key < cur_key;
 		temp_iter->second->rank_value = one_player.rank_value;
 		temp_iter->second->player_info = one_player.player_info;
 		temp_iter->second->update_ts = gen_next_update_ts();
@@ -136,7 +138,8 @@ namespace spiritsaway::system::rank
 				self_iter = pre_iter;
 			}
 		}
-		return std::distance(m_sorted_rank_ptrs.begin(), self_iter) + 1;
+		return update_rank_result{ pre_rank,std::uint32_t(std::distance(m_sorted_rank_ptrs.begin(), self_iter) + 1) ,temp_iter->second->update_ts
+		};
 	}
 
 	json array_rank::encode() const

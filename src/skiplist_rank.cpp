@@ -122,9 +122,8 @@ namespace spiritsaway::system::rank
 			prev_nodes[i] = search_node;
 		}
 	}
-	void skiplist_rank::remove_from_list(node *cur_node)
+	std::uint32_t skiplist_rank::remove_from_list(node *cur_node)
 	{
-
 		std::array<node *, MAX_LEVEL> prev_nodes;
 		std::array<std::uint32_t, MAX_LEVEL> prev_ranks;
 		get_prev_nodes(*cur_node, prev_nodes, prev_ranks);
@@ -145,27 +144,29 @@ namespace spiritsaway::system::rank
 			m_prev_node_for_min = prev_nodes[0];
 		}
 		cur_node->clear();
+		return prev_ranks[0] + 1;
 	}
 
 	// 返回插入之后的排名
-	std::uint32_t skiplist_rank::update(const rank_info &one_player)
+	update_rank_result skiplist_rank::update(const rank_info &one_player)
 	{
 		// debug_print();
 		auto pre_size = size();
 		auto temp_node = find_node(one_player.player_id);
+		std::uint32_t old_rank = 0;
 		if (temp_node == nullptr)
 		{
 			if (one_player.rank_value <= m_min_rank_info.rank_value || one_player.rank_value >= m_max_rank_info.rank_value)
 			{
 				// 不在范围之内的则不参与排名
-				return 0;
+				return update_rank_result{ 0, 0, 0 };
 			}
 			if (pre_size == m_pool_sz)
 			{
 				// 如果满了 且当前值大于最末尾的有效值 则不参与排名
 				if (*m_prev_node_for_min < one_player.rank_value)
 				{
-					return m_pool_sz + 1;
+					return update_rank_result{ 0, 0, 0 };
 				}
 			}
 			temp_node = create_node(one_player);
@@ -175,17 +176,18 @@ namespace spiritsaway::system::rank
 			if (temp_node->rank_info_ptr->rank_value == one_player.rank_value)
 			{
 				// 相同分数 直接返回排名
-				return get_rank(one_player.player_id).second;
+				old_rank = get_rank(one_player.player_id).second;
+				return update_rank_result{ old_rank, old_rank, temp_node->rank_info_ptr->update_ts };
 			}
 			else
 			{
-				remove_from_list(temp_node);
+				old_rank = remove_from_list(temp_node);
 				pre_size -= 1;
 				if (one_player.rank_value <= m_min_rank_info.rank_value || one_player.rank_value >= m_max_rank_info.rank_value)
 				{
 					// 代表从当前排行榜上删除这个玩家
 					m_key_to_node.erase(one_player.player_id);
-					return 0;
+					return update_rank_result{ old_rank, 0, 0 };
 				}
 				temp_node->rank_info_ptr->update_value_and_ts(one_player.rank_value, gen_next_update_ts());
 			}
@@ -197,7 +199,7 @@ namespace spiritsaway::system::rank
 		if (prev_ranks[0] == m_pool_sz)
 		{
 			m_key_to_node.erase(one_player.player_id);
-			return m_pool_sz + 1;
+			return update_rank_result{ old_rank, 0, 0 };
 		}
 		int cur_node_level = temp_node->m_level;
 
@@ -231,7 +233,7 @@ namespace spiritsaway::system::rank
 		{
 			shrink_to_pool_sz();
 		}
-		return prev_ranks[0] + 1;
+		return update_rank_result{ old_rank,prev_ranks[0] + 1, temp_node->rank_info_ptr->update_ts };
 	}
 
 	bool skiplist_rank::remove(const std::string& key)

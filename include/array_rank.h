@@ -40,7 +40,7 @@ namespace spiritsaway::system::rank
 		{
 			return std::uint32_t(m_sorted_rank_ptrs.size());
 		}
-		std::uint32_t update(const rank_info& one_player) override;
+		update_rank_result update(const rank_info& one_player) override;
 
 		std::pair<const rank_info*, std::uint32_t> get_rank(const std::string& player_id) const override;
 

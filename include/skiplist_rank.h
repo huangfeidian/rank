@@ -78,7 +78,7 @@ namespace spiritsaway::system::rank
 		void debug_print() const;
 	public:
 		// interfaces
-		std::uint32_t update(const rank_info& one_player) override;
+		update_rank_result update(const rank_info& one_player) override;
 
 		std::uint32_t size() const override;
 
@@ -114,7 +114,8 @@ namespace spiritsaway::system::rank
 		// 记录每一层中当前node 的prev节点
 		void get_prev_nodes_const(const node &in_node, std::array<const node *, MAX_LEVEL> &prev_nodes, std::array<std::uint32_t, MAX_LEVEL> &prev_ranks) const;
 
-		void remove_from_list(node *cur_node);
+		// 返回删除前的排名
+		std::uint32_t remove_from_list(node *cur_node);
 
 
 		int level() const;
