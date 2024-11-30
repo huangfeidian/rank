@@ -65,6 +65,8 @@ namespace spiritsaway::system::rank
 
 		node m_max_node;
 		node m_min_node;
+		// min 节点前面的节点
+		node* m_prev_node_for_min = nullptr;
 		int m_level; // 最大值为max_level - 1
 		std::minstd_rand  m_random_engine;
 		std::uniform_int_distribution<std::uint64_t> m_random_dis;

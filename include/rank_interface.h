@@ -26,6 +26,7 @@ namespace spiritsaway::system::rank
 		{
 			json result;
 			result["name"] = m_name;
+			result["impl_name"] = rank_impl_name();
 			result["rank_sz"] = m_rank_sz;
 			result["pool_sz"] = m_pool_sz;
 			result["min_value"] = m_min_value;

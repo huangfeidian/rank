@@ -60,7 +60,7 @@ void test_1(std::uint32_t num)
 	std::uint32_t rank_num = num;
 	std::uint32_t pool_num = num * 1.5;;
 	std::vector<rank_info> temp_ranks;
-	for (int i = 0; i <  2 * pool_num; i++)
+	for (int i = 0; i <  4 * pool_num; i++)
 	{
 		rank_info cur_rank_info;
 		cur_rank_info.player_id = "player_" + std::to_string(i);
