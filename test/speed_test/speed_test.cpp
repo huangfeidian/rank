@@ -10,7 +10,7 @@ using namespace spiritsaway::system::rank;
 struct cost_reporter
 {
 	static std::unordered_map<std::string, double> stats;
-	std::chrono::steady_clock::time_point begin_ts;
+	decltype(std::chrono::high_resolution_clock::now()) begin_ts;
 	const std::string name;
 	cost_reporter(std::string in_name)
 		: name(in_name)

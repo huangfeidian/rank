@@ -38,7 +38,7 @@ namespace spiritsaway::system::rank
 		bool remove(const std::string& player_id) override;
 		std::uint32_t size() const override
 		{
-			return m_sorted_rank_ptrs.size();
+			return std::uint32_t(m_sorted_rank_ptrs.size());
 		}
 		std::uint32_t update(const rank_info& one_player) override;
 
