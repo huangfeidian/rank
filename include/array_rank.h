@@ -17,9 +17,7 @@ namespace spiritsaway::system::rank
 	class array_rank : public rank_interface
 	{
 
-		std::vector<rank_info> m_rank_info_pool;
-		std::vector<std::uint32_t> m_pool_unused_indexes;
-		std::unordered_map<std::string, std::uint32_t> m_player_to_pool_idx;
+		std::unordered_map<std::string, std::unique_ptr<rank_info>> m_player_rank_infos;
 		// 从大到小排序
 		std::vector<rank_info_ptr_wrapper> m_sorted_rank_ptrs;
 
@@ -51,5 +49,9 @@ namespace spiritsaway::system::rank
 		std::vector<const rank_info*> get_players(std::uint32_t begin_rank, std::uint32_t end_rank) const override;
 
 		std::uint32_t get_rank(double rank_value) const override;
+		std::string rank_impl_name() const override
+		{
+			return "array_rank";
+		}
 	};
 }

@@ -4,8 +4,8 @@ namespace spiritsaway::system::rank
 {
 	skiplist_rank::skiplist_rank(const std::string& name, std::uint32_t rank_sz, std::uint32_t pool_sz, double min_value, double max_value)
 		: rank_interface(name, rank_sz, pool_sz, min_value, max_value)
-		, m_max_node(&m_max_rank_info, false)
-		, m_min_node(&m_min_rank_info, false)
+		, m_max_node(&m_max_rank_info, MAX_LEVEL, false)
+		, m_min_node(&m_min_rank_info, MAX_LEVEL, false)
 		, m_level(0)
 		, m_random_engine(std::random_device{}()), m_random_dis(0, (1ull << (2 * MAX_LEVEL)) - 1)
 	{
@@ -19,6 +19,7 @@ namespace spiritsaway::system::rank
 			m_max_node.nexts[i] = &m_min_node;
 			m_max_node.spans[i] = 0;
 		}
+		m_key_to_node.reserve(2 * pool_sz);
 	}
 
 	skiplist_rank::~skiplist_rank()
@@ -30,7 +31,7 @@ namespace spiritsaway::system::rank
 
 	int skiplist_rank::random_level()
 	{
-		int temp_random_value = m_random_dis(m_random_engine);
+		std::uint64_t temp_random_value = m_random_dis(m_random_engine);
 		int result_level = 0;
 		while (temp_random_value)
 		{
@@ -45,11 +46,21 @@ namespace spiritsaway::system::rank
 				break;
 			}
 		}
-		return result_level >= MAX_LEVEL-1 ? MAX_LEVEL - 2 : result_level;
+		if (result_level > MAX_LEVEL - 1)
+		{
+			result_level = MAX_LEVEL - 1;
+		}
+		if (result_level > m_level)
+		{
+			// 超过当前最大层数的时候直接对当前层数加1
+			result_level = ++m_level;
+			m_max_node.spans[result_level] = size();
+		}
+		return result_level;
 	}
 	skiplist_rank::node *skiplist_rank::create_node(const rank_info &one_player)
 	{
-		auto temp_node = std::make_unique<node>(new rank_info(one_player));
+		auto temp_node = std::make_unique<node>(new rank_info(one_player), random_level());
 		auto result = temp_node.get();
 		result->rank_info_ptr->update_ts = gen_next_update_ts();
 		m_key_to_node[one_player.player_id] = std::move(temp_node);
@@ -71,8 +82,8 @@ namespace spiritsaway::system::rank
 	// 记录每一层中当前node 的prev节点
 	void skiplist_rank::get_prev_nodes(const node &in_node, std::array<node *, MAX_LEVEL> &prev_nodes, std::array<std::uint32_t, MAX_LEVEL> &prev_ranks)
 	{
-		std::fill(prev_nodes.begin(), prev_nodes.end(), nullptr);
-		std::fill(prev_ranks.begin(), prev_ranks.end(), 0);
+		std::fill(prev_nodes.begin(), prev_nodes.begin() + m_level + 1, nullptr);
+		std::fill(prev_ranks.begin(), prev_ranks.begin() + m_level + 1, 0);
 		node *search_node = &m_max_node;
 		std::uint32_t last_level_prev_rank = 0;
 		for (int i = m_level; i >= 0; --i)
@@ -175,15 +186,7 @@ namespace spiritsaway::system::rank
 			m_key_to_node.erase(one_player.player_id);
 			return m_pool_sz + 1;
 		}
-		int cur_node_level = random_level();
-
-		if (cur_node_level > m_level)
-		{
-			// 超过当前最大层数的时候直接对当前层数加1
-			cur_node_level = ++m_level;
-			prev_nodes[cur_node_level] = &m_max_node;
-			m_max_node.spans[cur_node_level] = pre_size;
-		}
+		int cur_node_level = temp_node->m_level;
 
 		// 调整next指针与span
 		for (int i = cur_node_level; i >= 0; --i)
@@ -260,7 +263,7 @@ namespace spiritsaway::system::rank
 		temp_rank_info.rank_value = value;
 		temp_rank_info.update_ts = std::numeric_limits<std::uint64_t>::max();
 
-		node temp_node(&temp_rank_info, false);
+		node temp_node(&temp_rank_info, m_level + 1, false);
 		std::array<const node *, MAX_LEVEL> prev_nodes;
 		std::array<std::uint32_t, MAX_LEVEL> prev_ranks;
 		get_prev_nodes_const(temp_node, prev_nodes, prev_ranks);

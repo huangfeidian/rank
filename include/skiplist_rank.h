@@ -14,21 +14,23 @@ namespace spiritsaway::system::rank
 
 	class skiplist_rank : public rank_interface
 	{
-		static const std::uint32_t MAX_LEVEL = 16;
+		static const std::uint32_t MAX_LEVEL = 20;
 
 		struct node
 		{
 
 		public:
 			rank_info *const rank_info_ptr;
-			const bool m_should_delete;
+			const std::uint32_t m_level : 31;
+			const std::uint32_t m_own_rank_ptr : 1;
 			std::array<std::uint32_t, MAX_LEVEL> spans; // 记录当前(this, nexts[i])之间的0级节点数量
 			std::array<node *, MAX_LEVEL> nexts;
 
 		public:
-			node(rank_info *in_rank_info, bool should_delete = true)
+			node(rank_info *in_rank_info, std::uint32_t in_level, bool should_delete = true)
 				: rank_info_ptr(in_rank_info)
-				, m_should_delete(should_delete)
+				, m_level(in_level)
+				, m_own_rank_ptr(should_delete)
 			{
 				clear();
 			}
@@ -49,7 +51,7 @@ namespace spiritsaway::system::rank
 
 			~node()
 			{
-				if (m_should_delete)
+				if (m_own_rank_ptr)
 				{
 					delete rank_info_ptr;
 				}
@@ -63,8 +65,8 @@ namespace spiritsaway::system::rank
 
 		node m_max_node;
 		node m_min_node;
-		int m_level; // 最大值为max_level - 2
-		std::default_random_engine m_random_engine;
+		int m_level; // 最大值为max_level - 1
+		std::minstd_rand  m_random_engine;
 		std::uniform_int_distribution<std::uint64_t> m_random_dis;
 
 	public:
@@ -93,6 +95,10 @@ namespace spiritsaway::system::rank
 
 		bool decode(const json& data) override;
 		bool update_player_info(const std::string& player_id, const json::object_t& player_info) override;
+		std::string rank_impl_name() const override
+		{
+			return "skiplist_rank";
+		}
 	private:
 		int random_level();
 

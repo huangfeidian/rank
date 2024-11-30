@@ -21,7 +21,7 @@ namespace spiritsaway::system::rank
 		{
 
 		}
-
+		virtual std::string rank_impl_name() const = 0;
 		virtual json encode() const
 		{
 			json result;

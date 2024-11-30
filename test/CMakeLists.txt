@@ -1,1 +1,2 @@
 add_subdirectory(sort_test)
+add_subdirectory(speed_test)
