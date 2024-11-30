@@ -61,6 +61,12 @@ namespace spiritsaway::system::rank
 		{
 			return ++m_update_ts;
 		}
+	protected:
+
+		virtual void reset(const std::vector<rank_info>& player_ranks)
+		{
+			m_update_ts = 0;
+		}
 	public:
 		const std::string m_name;
 		const std::uint32_t m_rank_sz;

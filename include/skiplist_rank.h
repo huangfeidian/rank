@@ -101,6 +101,9 @@ namespace spiritsaway::system::rank
 		{
 			return "skiplist_rank";
 		}
+		static std::unique_ptr<skiplist_rank> create(const json& data);
+	protected:
+		void reset(const std::vector<rank_info>& player_ranks) override;
 	private:
 		int random_level();
 

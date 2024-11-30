@@ -21,8 +21,8 @@ namespace spiritsaway::system::rank
 		// 从大到小排序
 		std::vector<rank_info_ptr_wrapper> m_sorted_rank_ptrs;
 
-	private:
-		void reset(const std::vector<rank_info> &player_ranks);
+	protected:
+		void reset(const std::vector<rank_info> &player_ranks) override;
 
 	public:
 		array_rank(const std::string& name, std::uint32_t rank_sz, std::uint32_t pool_sz, double min_value, double max_value);

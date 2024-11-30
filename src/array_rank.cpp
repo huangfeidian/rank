@@ -47,9 +47,9 @@ namespace spiritsaway::system::rank
 	}
 	void array_rank::reset(const std::vector<rank_info> &player_ranks)
 	{
+		rank_interface::reset(player_ranks);
 		m_player_rank_infos.clear();
 		m_sorted_rank_ptrs.clear();
-		
 		for (const auto &one_player : player_ranks)
 		{
 			if (m_sorted_rank_ptrs.size() >= m_pool_sz)
@@ -57,7 +57,7 @@ namespace spiritsaway::system::rank
 				return;
 			}
 			auto temp_ptr = std::make_unique<rank_info>(one_player);
-
+			temp_ptr->update_ts = gen_next_update_ts();
 			m_sorted_rank_ptrs.push_back(rank_info_ptr_wrapper{ temp_ptr.get()});
 			m_player_rank_infos[one_player.player_id] = std::move(temp_ptr);
 		}
@@ -173,7 +173,6 @@ namespace spiritsaway::system::rank
 			assert(false);
 			return false;
 		}
-
 		reset(temp_sorted_rank_info);
 		return true;
 	}
@@ -239,6 +238,7 @@ namespace spiritsaway::system::rank
 			return {};
 		}
 		auto cur_array_rank = std::make_unique<array_rank>(name, rank_sz, pool_sz, min_value, max_value);
+
 		cur_array_rank->reset(temp_sorted_rank_info);
 		return std::move(cur_array_rank);
 	}

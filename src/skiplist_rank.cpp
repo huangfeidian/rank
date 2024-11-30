@@ -352,6 +352,13 @@ namespace spiritsaway::system::rank
 		result["sorted_ranks"] = std::move(all_nodes_json);
 		return result;
 	}
+	void skiplist_rank::reset(const std::vector<rank_info>& player_ranks)
+	{
+		rank_interface::reset(player_ranks);
+		m_level = 0;
+		m_key_to_node.clear();
+		m_prev_node_for_min = &m_max_node;
+	}
 	bool skiplist_rank::decode(const json &data)
 	{
 		std::vector<rank_info> temp_rank_infos;
@@ -364,6 +371,8 @@ namespace spiritsaway::system::rank
 			std::cerr << "fail to decode skiplist rank with exception " << e.what() << std::endl;
 			return false;
 		}
+		reset(temp_rank_infos);
+		
 		for (auto &one_rank_info : temp_rank_infos)
 		{
 			if (one_rank_info.rank_value <= m_min_rank_info.rank_value || one_rank_info.rank_value >= m_max_rank_info.rank_value)
@@ -469,5 +478,32 @@ namespace spiritsaway::system::rank
 			std::cout << std::endl;
 		}
 		std::cout << ">>>>>>>>>>>>>>>>>>>" << std::endl;
+	}
+
+	std::unique_ptr<skiplist_rank> skiplist_rank::create(const json& data)
+	{
+		std::uint32_t rank_sz;
+		std::uint32_t pool_sz;
+		std::string name;
+		double min_value, max_value;
+		std::vector<rank_info> temp_sorted_rank_info;
+		try
+		{
+			data.at("name").get_to(name);
+			data.at("pool_sz").get_to(pool_sz);
+			data.at("rank_sz").get_to(rank_sz);
+			data.at("sorted_ranks").get_to(temp_sorted_rank_info);
+			data.at("min_value").get_to(min_value);
+			data.at("max_value").get_to(max_value);
+		}
+		catch (std::exception& e)
+		{
+			assert(false);
+			return {};
+		}
+		auto cur_list_rank = std::make_unique<skiplist_rank>(name, rank_sz, pool_sz, min_value, max_value);
+
+		cur_list_rank->reset(temp_sorted_rank_info);
+		return std::move(cur_list_rank);
 	}
 }
