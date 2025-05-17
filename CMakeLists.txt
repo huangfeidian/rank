@@ -19,7 +19,7 @@ FILE(GLOB_RECURSE HEADER_LISTS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
 add_library(${PROJECT_NAME} ${SRC_LISTS} ${HEADER_LISTS})
 target_link_libraries(${PROJECT_NAME} nlohmann_json::nlohmann_json)
-
+target_include_directories(${PROJECT_NAME} INTERFACE $<INSTALL_INTERFACE:include>)
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(IS_TOPLEVEL_PROJECT TRUE)
 else()
